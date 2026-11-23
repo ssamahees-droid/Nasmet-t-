@@ -1,0 +1,6 @@
+{
+  "name": "نسمة حياة - دليل الصحة النفسية التفاعلي",
+  "description": "كتيب تفاعلي ومبسط للصحة النفسية مع تمارين يومية، استرخاء، مساحة شخصية للتعافي، ودعم ذكي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
