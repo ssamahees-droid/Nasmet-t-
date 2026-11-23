@@ -8,9 +8,10 @@ import {
   ArrowLeft,
   BatteryCharging,
   AlertTriangle,
-  Download,
   CheckSquare,
   Square,
+  PenLine,
+  BookMarked,
 } from 'lucide-react';
 import { BOOKLET_PAGES, TOC_ITEMS } from '../data/bookletPages';
 import { ExerciseData, PageCategory, SleepDayEntry, SleepLogMap } from '../types/booklet';
@@ -37,7 +38,7 @@ interface PageViewProps {
   onNavigate?: (pageIndex: number) => void;
   onOpenBreathing?: () => void;
   onImportPlan?: () => void;
-  onDownloadPDF?: () => void;
+  onOpenAnswers?: () => void;
 }
 
 const PrintableTextField = ({
@@ -82,7 +83,7 @@ const PrintableTextField = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={lines}
-        className="w-full bg-white border border-[#7CC9B6]/80 rounded-xl p-3 text-sm text-[#2E2E2E] focus:outline-none focus:border-[#0F4C5C] focus:ring-2 focus:ring-[#7CC9B6]/30 resize-y leading-relaxed transition"
+        className="w-full bg-white border border-[#7CC9B6] rounded-xl p-3 text-sm text-[#2E2E2E] placeholder:text-[#2E2E2E]/45 focus:outline-none focus:border-[#0F4C5C] focus:ring-2 focus:ring-[#7CC9B6]/35 resize-y transition"
       />
     );
   }
@@ -93,7 +94,7 @@ const PrintableTextField = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-white border border-[#7CC9B6]/80 rounded-xl px-3 py-2 text-sm text-[#2E2E2E] focus:outline-none focus:border-[#0F4C5C] focus:ring-2 focus:ring-[#7CC9B6]/30 transition"
+      className="w-full bg-white border border-[#7CC9B6] rounded-xl px-3 py-2 text-sm text-[#2E2E2E] placeholder:text-[#2E2E2E]/45 focus:outline-none focus:border-[#0F4C5C] focus:ring-2 focus:ring-[#7CC9B6]/35 transition"
     />
   );
 };
@@ -222,7 +223,6 @@ const PageShell = ({
   return (
     <article className={`${containerClass} ${textSizeClass}`} id={`booklet-page-${meta.index}`}>
       <div>
-        {/* Editorial Unboxed Header (Zero-Pill Discipline) */}
         <header
           className={`flex items-center justify-between gap-4 pb-3 mb-5 border-b ${
             isEmergency ? 'border-[#6D1B3B]/25' : 'border-[#7CC9B6]/50'
@@ -249,10 +249,9 @@ const PageShell = ({
         {children}
       </div>
 
-      {/* Editorial Footer with Real Page Number */}
       {meta.pageNumber !== null && (
         <footer className="mt-6 pt-3 border-t border-[#7CC9B6]/30 flex items-center justify-between text-[11px] text-[#2E2E2E]/65 font-sub tabular-nums">
-          <span>مبادرة نسمة حياة · دليل مبسط للصحة النفسية</span>
+          <span>مبادرة نسمة حياة · كتيب تفاعلي للتأمل والتعافي</span>
           <span className="font-heading font-bold text-[#0F4C5C]">
             صفحة {meta.pageNumber} من 18
           </span>
@@ -270,40 +269,50 @@ const MOOD_SUGGESTIONS: {
   note: string;
 }[] = [
   {
-    id: 'exhausted',
+    id: 'مرهق ومستنزَف',
     label: 'مرهق ومستنزَف',
     targetPage: 10,
     targetTitle: 'أنت لست آلة: ميزانية الطاقة',
     note: 'التعب المستمر رسالة من جسدك ونفسك بأنك أعطيت أكثر مما شحنت. لنبدأ بفحص ميزانية طاقتك.',
   },
   {
-    id: 'anxious',
+    id: 'قلق وكثير التفكير',
     label: 'قلق وكثير التفكير',
     targetPage: 8,
     targetTitle: 'القلق وكثرة التفكير',
     note: 'دوران الأفكار يرهق العقل. سنرتّب معًا ما تستطيع التحكم فيه ونهدئ جهازك العصبي.',
   },
   {
-    id: 'numb',
+    id: 'فاقد للشغف والمتعة',
     label: 'فاقد للشغف والمتعة',
     targetPage: 6,
     targetTitle: 'عندما تفقد الأشياء طعمها',
     note: 'أن تفقد الحماس لأشياء كنت تحبها ليس كسلًا؛ دعنا نلاحظ الإشارة بهدوء ودون قسوة على نفسك.',
   },
   {
-    id: 'boundaries',
+    id: 'مثقل بإرضاء الآخرين',
     label: 'مثقل بإرضاء الآخرين',
     targetPage: 11,
     targetTitle: 'الحدود ليست قسوة',
     note: 'تعلم قول "لا" بلطف ووضوح يحمي قلبك وطاقتك قبل أن تنهار.',
   },
   {
-    id: 'explore',
+    id: 'أقرأ للتوعية والاستكشاف',
     label: 'أقرأ للتوعية والاستكشاف',
     targetPage: 3,
     targetTitle: 'المقدمة: هل أنت بخير فعلاً؟',
-    note: 'مرحبًا بك! اقرأ على مهلك، وتذكر أن هذا الكتيب رفيق هادئ لا يفرض عليك أي استعجال.',
+    note: 'مرحبًا بك! اقرأ ودوّن تأملاتك على مهلك، فهذا الكتيب رفيق هادئ لحالتك.',
   },
+];
+
+const PAGE4_SYMPTOMS = [
+  'عصبية أكثر من المعتاد',
+  'فقدان الاستمتاع بالأشياء',
+  'صعوبة في النوم أو نوم زائد',
+  'تعب مستمر وصعوبة في التركيز',
+  'رغبة في الابتعاد عن الناس',
+  'ضغط دائم وكثرة تفكير',
+  'تغيرات في الشهية وشعور بالفراغ',
 ];
 
 const QUICK_EMOTIONS = ['غضب', 'حزن', 'خوف', 'ضغط', 'إحباط', 'تشتت'];
@@ -348,16 +357,20 @@ export const BookletPageView: React.FC<PageViewProps> = ({
   onNavigate,
   onOpenBreathing,
   onImportPlan,
-  onDownloadPDF,
+  onOpenAnswers,
 }) => {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   const hasProgressOnPage = (idx: number): boolean => {
     switch (idx) {
+      case 0:
+        return Boolean(exercises.owner_name?.trim());
       case 1:
-        return Boolean(exercises.mood_now);
+        return Boolean(exercises.mood_now || exercises.page1_note?.trim());
+      case 3:
+        return Boolean(exercises.page3_feeling || exercises.page3_resonance?.trim());
       case 4:
-        return Boolean(exercises.page4_q1?.trim());
+        return Boolean(exercises.page4_q1?.trim() || exercises.page4_symptoms);
       case 5:
         return Boolean(
           exercises.page5_stress1?.trim() ||
@@ -365,7 +378,9 @@ export const BookletPageView: React.FC<PageViewProps> = ({
             exercises.page5_stress3?.trim()
         );
       case 6:
-        return Boolean(exercises.page6_enjoy || exercises.page6_affect);
+        return Boolean(
+          exercises.page6_enjoy || exercises.page6_affect || exercises.page6_missed_joy?.trim()
+        );
       case 7:
         return Boolean(exercises.page7_what?.trim() || exercises.page7_emotion);
       case 8:
@@ -375,15 +390,21 @@ export const BookletPageView: React.FC<PageViewProps> = ({
       case 10:
         return Boolean(exercises.page10_drain?.trim() || exercises.page10_restore?.trim());
       case 11:
-        return Boolean(exercises.page11_my_boundary?.trim());
+        return Boolean(exercises.page11_my_boundary?.trim() || exercises.page11_boundary_who);
       case 12:
         return Boolean(exercises.page12_hurt?.trim() || exercises.page12_limit?.trim());
       case 13:
-        return Boolean(exercises.page13_reasons);
+        return Boolean(exercises.page13_reasons || exercises.page13_question_for_pro?.trim());
       case 14:
         return Boolean(exercises.page14_signs);
+      case 15:
+        return Boolean(exercises.page15_choice || exercises.page15_questions?.trim());
+      case 16:
+        return Boolean(exercises.page16_safe_contact?.trim() || exercises.page16_nearest_er?.trim());
       case 17:
         return Boolean(exercises.plan_decline?.trim() || exercises.plan_step?.trim());
+      case 18:
+        return Boolean(exercises.page18_promise?.trim());
       default:
         return false;
     }
@@ -407,16 +428,16 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     }
   };
 
-  // ---------------- PAGE 0: COVER ----------------
+  // ---------------- PAGE 0: INTERACTIVE COVER ----------------
   if (pageIndex === 0) {
     const coverShellClass =
       mode === 'print'
         ? 'booklet-page w-[560px] min-h-[794px] bg-gradient-to-br from-[#0F4C5C] to-[#093440] text-white p-8 flex flex-col justify-between text-center relative'
-        : 'booklet-page w-full max-w-[680px] mx-auto bg-gradient-to-br from-[#0F4C5C] to-[#093440] text-white p-7 sm:p-12 rounded-2xl shadow-lg min-h-[560px] flex flex-col justify-between text-center relative';
+        : 'booklet-page w-full max-w-[680px] mx-auto bg-gradient-to-br from-[#0F4C5C] to-[#093440] text-white p-6 sm:p-10 rounded-2xl shadow-lg min-h-[560px] flex flex-col justify-between text-center relative';
 
     return (
       <article className={coverShellClass} id="booklet-page-0">
-        <div className="border border-white/20 rounded-xl p-6 sm:p-9 flex-1 flex flex-col justify-between items-center">
+        <div className="border border-white/20 rounded-xl p-5 sm:p-8 flex-1 flex flex-col justify-between items-center">
           <div className="space-y-2">
             <p className="text-[#FFC857] font-heading font-semibold text-xs sm:text-sm tracking-wide">
               "كثيرون يعيشون الحياة... وقليلون يستمتعون بها"
@@ -426,38 +447,78 @@ export const BookletPageView: React.FC<PageViewProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col items-center my-6">
-            <NasmatLogoMark size="lg" className="mb-5 shadow-md" />
+          <div className="flex flex-col items-center my-4 w-full max-w-md">
+            <NasmatLogoMark size="lg" className="mb-4 shadow-md" />
 
             <div className="text-[#7CC9B6] font-heading font-semibold text-base sm:text-lg mb-1">
               مبادرة
             </div>
-            <h2 className="text-4xl sm:text-5xl font-extrabold font-heading tracking-tight text-white mb-3">
+            <h2 className="text-4xl sm:text-5xl font-extrabold font-heading tracking-tight text-white mb-2">
               « نسمة حياة »
             </h2>
-            <BrushStrokeUnderline color="#FF8A65" className="mb-4" />
+            <BrushStrokeUnderline color="#FF8A65" className="mb-3" />
 
-            <p className="text-sm sm:text-base text-[#FFF7E9] leading-relaxed font-sub max-w-md">
+            <p className="text-sm sm:text-base text-[#FFF7E9] leading-relaxed font-sub">
               نحو مجتمع يهتم بالصحة النفسية كما يهتم بالصحة الجسدية
             </p>
-            <p className="text-[#FFC857] font-heading font-bold text-sm sm:text-base mt-2">
+            <p className="text-[#FFC857] font-heading font-bold text-sm sm:text-base mt-1.5">
               "لأن مش كل وجع بيبان"
             </p>
+
+            {/* Interactive Personalization Right on Cover */}
+            <div className="w-full mt-5 bg-white/10 border border-white/25 rounded-xl p-3.5 text-right">
+              <label
+                htmlFor="cover-owner-name"
+                className="block text-xs font-heading font-semibold text-[#FFC857] mb-1.5"
+              >
+                {mode === 'print'
+                  ? 'هذا الكتيب مساحتك الخاصة:'
+                  : 'هذا الكتيب مساحتك التفاعلية الخاصة — اكتب اسمك أو لقبًا تحبه:'}
+              </label>
+              {mode === 'print' ? (
+                <div className="text-sm font-heading font-bold text-white border-b border-dashed border-white/50 pb-1">
+                  {exercises.owner_name?.trim() || '...........................................'}
+                </div>
+              ) : (
+                <input
+                  id="cover-owner-name"
+                  type="text"
+                  value={exercises.owner_name || ''}
+                  onChange={(e) => onInputChange('owner_name', e.target.value)}
+                  placeholder="اكتب اسمك هنا لتبدأ نسختك التفاعلية..."
+                  className="w-full bg-white text-[#2E2E2E] placeholder:text-[#2E2E2E]/45 rounded-lg px-3 py-2 text-sm font-body focus:outline-none focus:ring-2 focus:ring-[#FFC857]"
+                />
+              )}
+            </div>
           </div>
 
-          <div className="w-full flex flex-col items-center gap-4">
+          <div className="w-full flex flex-col items-center gap-3">
             {mode === 'interactive' && onNavigate && (
-              <button
-                type="button"
-                onClick={() => onNavigate(1)}
-                className="inline-flex items-center gap-2 bg-[#FF8A65] hover:bg-[#e57753] text-white px-7 py-3 rounded-xl font-heading font-bold text-sm transition shadow-md cursor-pointer"
-              >
-                <span>افتح الكتيب وابدأ القراءة</span>
-                <ArrowLeft className="w-4 h-4" />
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => onNavigate(1)}
+                  className="inline-flex items-center gap-2 bg-[#FF8A65] hover:bg-[#e57753] text-white px-6 py-3 rounded-xl font-heading font-bold text-sm transition shadow-md cursor-pointer"
+                >
+                  <PenLine className="w-4 h-4" />
+                  <span>
+                    {exercises.owner_name?.trim()
+                      ? `ابدأ التفاعل يا ${exercises.owner_name.trim()}`
+                      : 'ابدأ الكتابة والتصفح'}
+                  </span>
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(2)}
+                  className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-4 py-3 rounded-xl font-heading font-bold text-xs sm:text-sm transition cursor-pointer"
+                >
+                  <span>تصفح الفهرس</span>
+                </button>
+              </div>
             )}
             <p className="text-xs text-[#FFF7E9]/75 font-sub">
-              دليل مبسط للصحة النفسية · تمارين تفاعلية ونسخة للطباعة (A5)
+              كتيب إلكتروني تفاعلي للكتابة والتأمل · تُحفظ إجاباتك تلقائيًا في جهازك
             </p>
           </div>
         </div>
@@ -465,26 +526,28 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     );
   }
 
-  // ---------------- PAGE 1: WELCOME + MOOD CHECK-IN ----------------
+  // ---------------- PAGE 1: WELCOME + MOOD CHECK-IN + FREE NOTE ----------------
   if (pageIndex === 1) {
     const selectedMood = MOOD_SUGGESTIONS.find((m) => m.id === exercises.mood_now);
 
     return (
       <PageShell metaIndex={1} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
-        <div className="text-center pt-2">
-          <div className="flex items-center justify-center gap-2 mb-3">
+        <div className="text-center pt-1">
+          <div className="flex items-center justify-center gap-2 mb-2">
             <BotanicalLeaves color="#2E7D32" />
             <Heart className="w-6 h-6 fill-[#FF8A65] text-[#FF8A65]" />
           </div>
 
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#0F4C5C] mb-2">
-            أهلاً بك في مساحتك الآمنة
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#0F4C5C] mb-1">
+            {exercises.owner_name?.trim()
+              ? `أهلاً بك يا ${exercises.owner_name.trim()} في مساحتك الآمنة`
+              : 'أهلاً بك في مساحتك الآمنة'}
           </h2>
-          <div className="flex justify-center mb-5">
+          <div className="flex justify-center mb-4">
             <BrushStrokeUnderline color="#7CC9B6" />
           </div>
 
-          <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-5 sm:p-6 mb-6">
+          <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 sm:p-5 mb-5">
             <p className="text-lg sm:text-xl font-heading font-bold text-[#0F4C5C] leading-relaxed">
               "أنت لست وحدك، وهذا الكتيب مساحتك الخاصة للبدء من جديد."
             </p>
@@ -492,10 +555,10 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
 
         {/* Interactive Mood Check-In */}
-        <div className="bg-[#FCF9F2] border border-[#7CC9B6]/60 rounded-xl p-4 sm:p-5 text-right">
-          <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="bg-[#FCF9F2] border border-[#7CC9B6]/60 rounded-xl p-4 space-y-4 text-right">
+          <div className="flex items-center justify-between gap-2">
             <h3 className="font-heading font-bold text-sm sm:text-base text-[#0F4C5C]">
-              قبل أن نبدأ: كيف حال قلبك الآن؟
+              1. اختر ما يصف حال قلبك الآن:
             </h3>
             {mode === 'interactive' && onOpenBreathing && (
               <button
@@ -509,68 +572,42 @@ export const BookletPageView: React.FC<PageViewProps> = ({
             )}
           </div>
 
-          {mode === 'print' ? (
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {MOOD_SUGGESTIONS.map((item) => {
-                const active = exercises.mood_now === item.id;
-                return (
-                  <div key={item.id} className="flex items-center gap-2 py-1">
-                    <span
-                      className={`inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border ${
-                        active ? 'bg-[#0F4C5C] border-[#0F4C5C]' : 'border-[#0F4C5C]/60 bg-white'
-                      }`}
-                    />
-                    <span className={active ? 'font-bold text-[#0F4C5C]' : ''}>
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {MOOD_SUGGESTIONS.map((item) => {
-                  const active = exercises.mood_now === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() =>
-                        onInputChange('mood_now', active ? '' : item.id)
-                      }
-                      className={`px-3 py-2 rounded-xl text-xs font-heading font-semibold border transition cursor-pointer ${
-                        active
-                          ? 'bg-[#0F4C5C] text-white border-[#0F4C5C]'
-                          : 'bg-white text-[#0F4C5C] border-[#7CC9B6] hover:bg-[#7CC9B6]/15'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
+          <PrintableRadioGroup
+            mode={mode}
+            options={MOOD_SUGGESTIONS.map((m) => m.label)}
+            value={exercises.mood_now || ''}
+            onChange={(val) => onInputChange('mood_now', val)}
+          />
 
-              {selectedMood && (
-                <div className="bg-white border border-[#7CC9B6] rounded-xl p-3.5 mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <p className="text-xs sm:text-sm text-[#2E2E2E] leading-relaxed">
-                    {selectedMood.note}
-                  </p>
-                  {onNavigate && (
-                    <button
-                      type="button"
-                      onClick={() => onNavigate(selectedMood.targetPage)}
-                      className="inline-flex items-center gap-1.5 bg-[#FF8A65] hover:bg-[#e57753] text-white px-3.5 py-2 rounded-lg text-xs font-heading font-bold whitespace-nowrap shrink-0 cursor-pointer"
-                    >
-                      <span>انتقل إلى: {selectedMood.targetTitle}</span>
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+          {mode === 'interactive' && selectedMood && (
+            <div className="bg-white border border-[#7CC9B6] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs sm:text-sm text-[#2E2E2E] prose-box">
+                {selectedMood.note}
+              </p>
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate(selectedMood.targetPage)}
+                  className="inline-flex items-center gap-1.5 bg-[#FF8A65] hover:bg-[#e57753] text-white px-3.5 py-2 rounded-lg text-xs font-heading font-bold whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <span>ابدأ بـ: {selectedMood.targetTitle}</span>
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
               )}
-            </>
+            </div>
           )}
+
+          <div>
+            <label className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C] block mb-1.5">
+              2. كلمة قصيرة تود قولها لنفسك وأنت تفتح هذا الكتيب:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page1_note || ''}
+              onChange={(val) => onInputChange('page1_note', val)}
+              placeholder="مثال: سأكون لطيفًا مع نفسي اليوم..."
+            />
+          </div>
         </div>
       </PageShell>
     );
@@ -580,20 +617,30 @@ export const BookletPageView: React.FC<PageViewProps> = ({
   if (pageIndex === 2) {
     return (
       <PageShell metaIndex={2} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
-        <h2 className="font-heading text-2xl font-bold text-[#0F4C5C] mb-1">
-          دليل مبسط للصحة النفسية
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <h2 className="font-heading text-2xl font-bold text-[#0F4C5C]">
+            دليل مبسط للصحة النفسية
+          </h2>
+          {mode === 'interactive' && onOpenAnswers && (
+            <button
+              type="button"
+              onClick={onOpenAnswers}
+              className="inline-flex items-center gap-1.5 text-xs font-heading font-bold text-[#0F4C5C] bg-[#FFF7E9] border border-[#7CC9B6] hover:bg-[#7CC9B6]/15 px-3 py-1.5 rounded-lg cursor-pointer"
+            >
+              <BookMarked className="w-3.5 h-3.5" />
+              <span>عرض دفتر إجاباتي</span>
+            </button>
+          )}
+        </div>
         <BrushStrokeUnderline color="#FF8A65" className="mb-4" />
 
         <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 mb-4 text-xs sm:text-sm prose-box">
-          <strong className="text-[#0F4C5C]">فكرة الكتيب:</strong> رفيق عملي يقرأه الشخص المضغوط أو المتأذي نفسيًا؛ يساعده على فهم ما يمر به، اكتشاف العلامات المبكرة، وتطبيق خطوات واضحة للتعافي.
+          <strong className="text-[#0F4C5C]">فكرة الكتيب:</strong> مساحة تفاعلية للكتابة والاختيار وفهم ما تمر به خطوة بخطوة، مع حفظ تلقائي لإجاباتك.
         </div>
 
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-heading text-sm sm:text-base font-bold text-[#2E7D32]">
-            محتويات الكتيب {mode === 'interactive' ? '(اضغط على أي عنوان للانتقال إليه)' : ''}
-          </h3>
-        </div>
+        <h3 className="font-heading text-sm sm:text-base font-bold text-[#2E7D32] mb-2">
+          محتويات الكتيب {mode === 'interactive' ? '(اضغط على أي عنوان للتفاعل معه)' : ''}
+        </h3>
 
         <div className={mode === 'print' ? 'space-y-0.5 text-[11px]' : 'space-y-1 text-xs sm:text-sm'}>
           {TOC_ITEMS.map((item, idx) => {
@@ -610,7 +657,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
                   {mode === 'interactive' && done && (
                     <span
                       className="text-[#2E7D32] text-xs font-bold shrink-0"
-                      title="تم تدوين مشاركتك في هذه الصفحة"
+                      title="تمت الإجابة في هذه الصفحة"
                     >
                       ✓
                     </span>
@@ -649,7 +696,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     );
   }
 
-  // ---------------- PAGE 3: INTRO ----------------
+  // ---------------- PAGE 3: INTRO (NOW INTERACTIVE!) ----------------
   if (pageIndex === 3) {
     return (
       <PageShell metaIndex={3} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
@@ -661,24 +708,52 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <p className="mb-3">
           قد تكون حياتك تبدو جيدة من الخارج. تعمل، وتدرس، وتتزوج، وتربي أبناءك، وتنجح في عملك، وتضحك مع من حولك...
         </p>
-        <p className="mb-4">
+        <p className="mb-3">
           ومع ذلك، قد تستيقظ يومًا وتشعر أنك متعب من الداخل. لا تعرف لماذا. لا يوجد حدث كبير يبرر حزنك، ولا مشكلة واضحة تستطيع أن تشير إليها وتقول: <strong>"هذا هو السبب"</strong>.
         </p>
-        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 my-4 prose-box">
-          ومع ذلك... تشعر بالضيق. تفقد رغبتك في الأشياء التي كنت تحبها. تكثر أفكارك. تقل طاقتك. تصبح أبسط الأمور ثقيلة عليك. وقد تشعر أحيانًا أنك موجود في حياتك... لكنك لا تستمتع بها.
+        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 my-3 prose-box">
+          ومع ذلك... تشعر بالضيق. تفقد رغبتك في الأشياء التي كنت تحبها. تكثر أفكارك. تقل طاقتك. تصبح أبسط الأمور ثقيلة عليك.
         </div>
-        <p className="mb-3">
-          هذا الألم حقيقي، حتى لو لم يستطع أحد رؤيته. والصحة النفسية ليست فقط غياب المرض النفسي؛ بل هي جزء أساسي من الصحة والرفاه والقدرة على التعامل مع ضغوط الحياة اليومية.
+        <p className="mb-4">
+          هذا الألم حقيقي، حتى لو لم يستطع أحد رؤيته. هذا الكتيب ليس للتشخيص؛ هو دعوة لأن تتوقف قليلاً وتكتب وتسمع نفسك بصدق.
         </p>
-        <p>
-          هذا الكتيب ليس للتشخيص، ولن يخبرك أنك مصاب بمرض معين. هو ببساطة دعوة لأن تتوقف قليلاً... وتنظر إلى نفسك. ربما تحتاج إلى راحة، أو تغيير بعض الأشياء، أو الحديث مع شخص تثق به أو طلب مساعدة من مختص. <strong>وفي كل الحالات... لا تستهن بما تشعر به.</strong>
-        </p>
+
+        {/* Interactive Reflection on Intro */}
+        <div className="bg-[#FCF9F2] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3">
+          <div className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C]">
+            تفاعل سريع: هل تمر أحيانًا بشعور أنك تبدو بخير من الخارج، لكنك متعب من الداخل؟
+          </div>
+          <PrintableRadioGroup
+            mode={mode}
+            options={['نعم، كثيرًا', 'أحيانًا', 'نادرًا']}
+            value={exercises.page3_feeling || ''}
+            onChange={(val) => onInputChange('page3_feeling', val)}
+          />
+          {mode === 'interactive' && exercises.page3_feeling && (
+            <p className="text-xs text-[#2E7D32] font-semibold">
+              شكرًا لصدقك مع نفسك؛ الاعتراف بما نشعر به هو الخطوة الأولى للراحة.
+            </p>
+          )}
+          <div>
+            <label className="block text-xs font-bold text-[#0F4C5C] mb-1">
+              جملة لمستني هنا أو شعور أود تسجيله في البداية:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page3_resonance || ''}
+              onChange={(val) => onInputChange('page3_resonance', val)}
+              placeholder="اكتب ما خطر في بالك أثناء قراءة المقدمة..."
+            />
+          </div>
+        </div>
       </PageShell>
     );
   }
 
-  // ---------------- PAGE 4: TIRED SOUL ----------------
+  // ---------------- PAGE 4: TIRED SOUL (CLICKABLE SYMPTOM PICKER + TEXT) ----------------
   if (pageIndex === 4) {
+    const selectedSymptoms = (exercises.page4_symptoms || '').split(',').filter(Boolean);
+
     return (
       <PageShell metaIndex={4} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
         <h2 className="font-heading text-2xl font-bold text-[#0F4C5C] mb-1">
@@ -686,25 +761,60 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </h2>
         <BrushStrokeUnderline color="#5E4B8B" className="mb-4" />
 
-        <p className="mb-3">
-          أحيانًا لا يبدأ التعب النفسي في صورة واضحة. لا يأتي ومعه ورقة تقول: <em>"أنا قلق"</em> أو <em>"أنا مكتئب"</em> أو <em>"أنا منهك"</em>. قد يظهر في صورة:
+        <p className="mb-2.5">
+          أحيانًا لا يبدأ التعب النفسي في صورة واضحة. لا يأتي ومعه ورقة تقول: <em>"أنا قلق"</em> أو <em>"أنا منهك"</em>.
         </p>
-        <ul className="list-disc list-inside space-y-1.5 mb-4 pr-2 text-[#2E2E2E]">
-          <li>عصبية أكثر من المعتاد.</li>
-          <li>فقدان الاستمتاع بالأشياء.</li>
-          <li>صعوبة في النوم أو النوم أكثر من المعتاد.</li>
-          <li>تعب مستمر وصعوبة في التركيز.</li>
-          <li>رغبة في الابتعاد عن الناس.</li>
-          <li>إحساس دائم بالضغط وكثرة التفكير.</li>
-          <li>تغيرات في الشهية وشعور بالحزن أو الفراغ.</li>
-        </ul>
-        <p className="mb-4 text-xs sm:text-sm">
-          وجود عرض واحد لا يعني بالضرورة وجود اضطراب نفسي. المهم هو الصورة كاملة: ما شدة الأعراض؟ وكم استمرت؟ وهل بدأت تؤثر في حياتك وعملك وعلاقاتك؟
+        <p className="text-xs font-heading font-bold text-[#0F4C5C] mb-2">
+          {mode === 'interactive'
+            ? 'حدّد العلامات التي لاحظتها على نفسك مؤخرًا:'
+            : 'قد يظهر التعب النفسي في صورة:'}
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          {PAGE4_SYMPTOMS.map((sym) => {
+            const checked = selectedSymptoms.includes(sym);
+            if (mode === 'print') {
+              return (
+                <div key={sym} className="flex items-center gap-2 text-xs py-0.5">
+                  <span
+                    className={`inline-block w-3.5 h-3.5 rounded border shrink-0 ${
+                      checked ? 'bg-[#0F4C5C] border-[#0F4C5C]' : 'border-[#0F4C5C]/60 bg-white'
+                    }`}
+                  />
+                  <span>{sym}</span>
+                </div>
+              );
+            }
+            return (
+              <button
+                key={sym}
+                type="button"
+                aria-pressed={checked}
+                onClick={() => toggleCommaItem('page4_symptoms', sym)}
+                className={`flex items-center gap-2 text-right px-3 py-2 rounded-xl border text-xs font-medium cursor-pointer transition ${
+                  checked
+                    ? 'bg-[#0F4C5C] text-white border-[#0F4C5C]'
+                    : 'bg-[#FCF9F2] text-[#2E2E2E] border-[#7CC9B6]/60 hover:bg-[#FFF7E9]'
+                }`}
+              >
+                {checked ? (
+                  <CheckSquare className="w-4 h-4 shrink-0" />
+                ) : (
+                  <Square className="w-4 h-4 text-[#7CC9B6] shrink-0" />
+                )}
+                <span>{sym}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mb-3 text-xs sm:text-sm">
+          وجود عرض واحد لا يعني بالضرورة اضطرابًا نفسيًا؛ المهم هو شدة الأعراض واستمرارها وتأثيرها في حياتك.
         </p>
 
         <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4">
           <div className="font-heading font-bold text-[#0F4C5C] mb-1">
-            توقف واسأل نفسك:
+            مساحة كتابة — توقف واسأل نفسك:
           </div>
           <label className="block text-xs font-semibold text-[#8B5E3C] mb-2">
             ما الشيء الذي تغير فيَّ مؤخرًا ولم أنتبه إليه؟
@@ -739,19 +849,19 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <BrushStrokeUnderline color="#8B5E3C" className="mb-4" />
 
         <p className="mb-3">
-          كلنا نتعرض للضغط... لكن لسنا جميعًا نتأثر بالطريقة نفسها. الضغط النفسي يمكن أن يكون استجابة طبيعية لمواقف صعبة، لكن المشكلة تبدأ عندما يصبح مستمرًا أو شديدًا لدرجة تؤثر في حياتنا اليومية.
+          كلنا نتعرض للضغط... لكن لسنا جميعًا نتأثر بالطريقة نفسها. الضغط النفسي قد يكون استجابة طبيعية لمواقف صعبة، لكن المشكلة تبدأ عندما يصبح مستمرًا أو شديدًا لدرجة تؤثر في حياتنا اليومية.
         </p>
         <p className="mb-4">
-          لا تسأل نفسك فقط: <em>"إيه اللي مضايقني؟"</em>، اسأل أيضًا: <strong>"إيه اللي بيستنزفني باستمرار؟"</strong> قد يكون العمل، أو علاقة، أو مسؤوليات متراكمة، أو سنوات من التحمل دون توقف.
+          لا تسأل نفسك فقط: <em>"إيه اللي مضايقني؟"</em>، اسأل أيضًا: <strong>"إيه اللي بيستنزفني باستمرار؟"</strong>
         </p>
 
         <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3">
           <div className="font-heading font-bold text-[#0F4C5C]">
-            تمرين صغير: اكتب أكثر ثلاثة أشياء تستنزفك حاليًا وحدد مسارها
+            اكتب أكثر ثلاثة أشياء تستنزفك حاليًا ثم اختر ما يناسبها:
           </div>
 
           {items.map((item) => (
-            <div key={item.key} className="bg-white/80 border border-[#7CC9B6]/40 rounded-lg p-2.5 space-y-2">
+            <div key={item.key} className="bg-white/90 border border-[#7CC9B6]/50 rounded-lg p-2.5 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="font-heading font-bold text-xs text-[#0F4C5C] tabular-nums">
                   {item.num}.
@@ -791,14 +901,14 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <BrushStrokeUnderline color="#5E4B8B" className="mb-4" />
 
         <p className="mb-3">
-          من العلامات التي تستحق الانتباه أن يبدأ الإنسان في فقدان الاهتمام أو المتعة بأشياء كان يستمتع بها سابقًا. قد يقول: <em>"مش فارق معايا"</em>، <em>"مش عايز أخرج"</em>، <em>"حتى الحاجات اللي كنت بحبها مبقتش تفرق"</em>.
+          من العلامات التي تستحق الانتباه أن يبدأ الإنسان في فقدان الاهتمام أو المتعة بأشياء كان يستمتع بها سابقًا. قد يقول: <em>"مش فارق معايا"</em>، <em>"حتى الحاجات اللي كنت بحبها مبقتش تفرق"</em>.
         </p>
         <p className="mb-4">
-          هذا ليس مجرد "دلع" أو "كسل" بالضرورة. فقدان الاهتمام أو المتعة يمكن أن يكون أحد أعراض الاكتئاب، خصوصًا عندما يستمر ويصاحبه تغيرات أخرى ويؤثر على الحياة اليومية. لكن لا تشخّص نفسك من خلال هذا الكتيب؛ المعلومة تساعدك على الانتباه، وليست بديلاً عن التقييم المتخصص.
+          هذا ليس مجرد "كسل". فقدان المتعة المستمر قد يكون أحد أعراض الاكتئاب، لكن المعلومة تساعدك على الانتباه، وليست بديلاً عن التقييم المتخصص.
         </p>
 
-        <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4 space-y-4">
-          <div className="font-heading font-bold text-[#0F4C5C]">اسأل نفسك بصدق:</div>
+        <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3.5">
+          <div className="font-heading font-bold text-[#0F4C5C]">اختر إجابتك ودوّن تأملك:</div>
 
           <div>
             <p className="text-xs sm:text-sm font-semibold mb-2 text-[#2E2E2E]">
@@ -824,9 +934,9 @@ export const BookletPageView: React.FC<PageViewProps> = ({
             />
           </div>
 
-          {mode === 'interactive' && (exercises.page6_enjoy || exercises.page6_affect) ? (
+          {mode === 'interactive' && (exercises.page6_enjoy || exercises.page6_affect) && (
             <div
-              className={`rounded-xl p-3.5 border text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              className={`rounded-xl p-3 border text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
                 needsAttention
                   ? 'bg-[#6D1B3B]/8 border-[#6D1B3B]/35 text-[#6D1B3B]'
                   : 'bg-[#7CC9B6]/15 border-[#7CC9B6] text-[#0F4C5C]'
@@ -847,11 +957,19 @@ export const BookletPageView: React.FC<PageViewProps> = ({
                 </button>
               )}
             </div>
-          ) : (
-            <p className="text-xs font-bold text-[#6D1B3B]">
-              إذا كانت الإجابة مقلقة بالنسبة لك، فهذه إشارة تستحق ألا تتجاهلها.
-            </p>
           )}
+
+          <div>
+            <label className="block text-xs font-bold text-[#0F4C5C] mb-1">
+              شيء واحد كنت أستمتع به وأتمنى استعادة طعمه:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page6_missed_joy || ''}
+              onChange={(val) => onInputChange('page6_missed_joy', val)}
+              placeholder="مثال: القراءة، الجلوس في الهدوء، لقاء صديق..."
+            />
+          </div>
         </div>
       </PageShell>
     );
@@ -872,13 +990,11 @@ export const BookletPageView: React.FC<PageViewProps> = ({
 
         <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 mb-4 text-xs sm:text-sm prose-box">
           <strong>بدل:</strong> "أنا غضبان، إذن لازم أهاجم". ← <strong>جرّب:</strong> ماذا حدث؟ ماذا أشعر؟ ماذا أحتاج؟ ما التصرف الأفضل الآن؟
-          <br />
-          <strong>وبدل:</strong> "أنا خائف، إذن أهرب". ← <strong>اسأل:</strong> هل هناك خطر حقيقي؟ وما الذي أستطيع فعله؟
         </div>
 
         <div className="bg-[#FCF9F2] border border-[#FF8A65]/50 rounded-xl p-4 space-y-2.5">
           <div className="font-heading font-bold text-[#0F4C5C] text-sm">
-            تمرين «سمِّ شعورك» — اختر شعورًا غلب عليك مؤخرًا وتأمل الموقف:
+            تمرين «سمِّ شعورك» — اختر شعورًا غلب عليك واكتب الموقف:
           </div>
 
           {mode === 'interactive' && (
@@ -978,10 +1094,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
 
         <p className="mb-2.5">
-          هل حدث أن تنتهي من يومك، وتضع رأسك على الوسادة، ثم يبدأ عقلك في تشغيل كل شيء من جديد؟ ماذا كان يجب أن أقول؟ ماذا لو حدث كذا؟ ماذا لو فشلت؟
-        </p>
-        <p className="mb-4">
-          التفكير يساعدنا على حل المشكلات، لكن التفكير المستمر دون الوصول إلى حل يتحول إلى دائرة تستنزفنا.
+          هل حدث أن تضع رأسك على الوسادة، ثم يبدأ عقلك في تشغيل كل شيء من جديد؟ التفكير المستمر دون الوصول إلى حل يتحول إلى دائرة تستنزفنا.
         </p>
 
         <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3 text-xs">
@@ -1041,7 +1154,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
 
         <p className="text-xs text-[#2E7D32] font-semibold mt-3">
-          الفكرة ليست أن تمنع عقلك من التفكير، وإنما أن تتعلم متى يتحول التفكير من حل المشكلة إلى استنزافك.
+          الفكرة ليست أن تمنع عقلك من التفكير، وإنما أن تتعلم متى يتحول التفكير إلى استنزافك.
         </p>
       </PageShell>
     );
@@ -1070,7 +1183,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 mb-3">
           <div className="flex items-center justify-between mb-2">
             <span className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C]">
-              متابع النوم الأسبوعي (7 أيام)
+              متابع النوم التفاعلي (اضغط للاختيار يوميًا)
             </span>
             {mode === 'interactive' && (
               <span className="text-[11px] font-sub text-[#2E7D32] tabular-nums">
@@ -1200,7 +1313,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
 
           <div className="mt-3">
             <span className="font-bold text-xs text-[#0F4C5C] block mb-1">
-              هل هناك نمط يتكرر؟ (ملاحظاتك عن النوم):
+              هل هناك نمط يتكرر؟ (اكتب ملاحظاتك عن النوم):
             </span>
             <PrintableTextField
               multiline
@@ -1212,10 +1325,6 @@ export const BookletPageView: React.FC<PageViewProps> = ({
             />
           </div>
         </div>
-
-        <p className="text-xs text-[#2E2E2E]/80">
-          إذا استمرت مشكلات النوم وأثرت بوضوح على حياتك، فالأفضل مناقشتها مع مختص بدل محاولة علاجها عشوائيًا.
-        </p>
       </PageShell>
     );
   }
@@ -1242,13 +1351,9 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
 
         <p className="mb-2.5">
-          أحيانًا نعيش وكأن المطلوب منا أن نكون متاحين طوال الوقت: نعمل، نساعد، نرد، ننجز، نلبي احتياجات الآخرين... ثم نتساءل: <strong>"أنا ليه خلصت؟"</strong>
-        </p>
-        <p className="mb-4">
-          لأن الإنسان له طاقة محدودة. العناية بالنفس ليست هروبًا من المسؤوليات، بل إدارة ذكية لطاقتك قبل الوصول إلى الانهيار.
+          أحيانًا نعيش وكأن المطلوب منا أن نكون متاحين طوال الوقت... ثم نتساءل: <strong>"أنا ليه خلصت؟"</strong> لأن الإنسان له طاقة محدودة، والعناية بالنفس هي إدارة ذكية لهذه الطاقة.
         </p>
 
-        {/* Interactive Battery Balance */}
         {mode === 'interactive' && (
           <div className="bg-[#FCF9F2] border border-[#7CC9B6]/60 rounded-xl p-3.5 mb-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-xs font-heading font-bold text-[#0F4C5C]">
@@ -1273,11 +1378,11 @@ export const BookletPageView: React.FC<PageViewProps> = ({
 
         <div className="bg-[#FFF7E9] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3 text-xs">
           <div className="font-heading font-bold text-[#0F4C5C] text-sm">
-            تمرين «ميزانية الطاقة»
+            تمرين «ميزانية الطاقة» — اكتب في الخانات التالية:
           </div>
           <div>
             <label className="font-bold text-[#6D1B3B] block mb-1">
-              أشياء تستنزف طاقتك (اكتب كل بند في سطر):
+              أشياء تستنزف طاقتك (كل بند في سطر):
             </label>
             <PrintableTextField
               multiline
@@ -1290,7 +1395,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
           </div>
           <div>
             <label className="font-bold text-[#2E7D32] block mb-1">
-              أشياء تساعدك على استعادة طاقتك (اكتب كل بند في سطر):
+              أشياء تساعدك على استعادة طاقتك (كل بند في سطر):
             </label>
             <PrintableTextField
               multiline
@@ -1303,7 +1408,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
           </div>
           <div>
             <label className="font-bold text-[#0F4C5C] block mb-1">
-              السؤال المهم: ما الشيء الذي يمكنني تقليله هذا الأسبوع؟
+              ما الشيء الذي يمكنني تقليله هذا الأسبوع؟
             </label>
             <PrintableTextField
               mode={mode}
@@ -1327,20 +1432,17 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <BrushStrokeUnderline color="#7CC9B6" className="mb-4" />
 
         <p className="mb-3">
-          قد تؤذي نفسك وأنت تحاول إرضاء الجميع. توافق وأنت لا تريد. تتحمل أكثر مما تستطيع. تسكت حتى لا تغضب أحدًا.
-        </p>
-        <p className="mb-4">
-          وضع الحدود لا يعني أن تصبح قاسيًا؛ يعني أن تعرف: <strong>ما الذي أقبله؟ وما الذي لا أقبله؟ وما الذي أستطيع تحمله؟</strong>
+          قد تؤذي نفسك وأنت تحاول إرضاء الجميع. وضع الحدود لا يعني أن تصبح قاسيًا؛ يعني أن تعرف: <strong>ما الذي أقبله؟ وما الذي لا أقبله؟ وما الذي أستطيع تحمله؟</strong>
         </p>
 
-        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 space-y-2.5 mb-4">
-          <div className="font-heading font-bold text-sm text-[#0F4C5C]">
-            جمل لطيفة وواضحة يمكنك استخدامها فورًا:
+        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 space-y-2 mb-3.5">
+          <div className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C]">
+            جمل لطيفة جاهزة (اضغط نسخ لتجربتها):
           </div>
           {BOUNDARY_PHRASES.map((phrase, idx) => (
             <div
               key={idx}
-              className="bg-white border border-[#7CC9B6]/50 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs sm:text-sm"
+              className="bg-white border border-[#7CC9B6]/50 rounded-lg p-2 flex items-center justify-between gap-2 text-xs sm:text-sm"
             >
               <span className="font-medium text-[#2E2E2E]">"{phrase}"</span>
               {mode === 'interactive' && (
@@ -1366,16 +1468,30 @@ export const BookletPageView: React.FC<PageViewProps> = ({
           ))}
         </div>
 
-        <div className="bg-[#FCF9F2] border border-[#FF8A65]/50 rounded-xl p-4">
-          <label className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C] block mb-2">
-            صِغ جملة حدود خاصة بك لموقف تتكرر فيه المجاملة على حسابك:
-          </label>
-          <PrintableTextField
-            mode={mode}
-            value={exercises.page11_my_boundary || ''}
-            onChange={(val) => onInputChange('page11_my_boundary', val)}
-            placeholder="مثال: أعتذر اليوم لأن وقتي ممتلئ..."
-          />
+        <div className="bg-[#FCF9F2] border border-[#FF8A65]/50 rounded-xl p-4 space-y-3">
+          <div>
+            <span className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C] block mb-2">
+              في أي مساحة تحتاج وضع حد لطيف هذه الفترة؟
+            </span>
+            <PrintableRadioGroup
+              mode={mode}
+              options={['العمل', 'العائلة', 'الأصدقاء', 'مع نفسي']}
+              value={exercises.page11_boundary_who || ''}
+              onChange={(val) => onInputChange('page11_boundary_who', val)}
+            />
+          </div>
+
+          <div>
+            <label className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C] block mb-1.5">
+              صِغ جملة حدود خاصة بك:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page11_my_boundary || ''}
+              onChange={(val) => onInputChange('page11_my_boundary', val)}
+              placeholder="مثال: أعتذر اليوم لأن وقتي ممتلئ..."
+            />
+          </div>
         </div>
       </PageShell>
     );
@@ -1390,13 +1506,13 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </h2>
         <BrushStrokeUnderline color="#5E4B8B" className="mb-4" />
 
-        <p className="mb-4">
-          ليس كل ألم نفسي سببه مرض نفسي. أحيانًا يكون الإنسان يعيش داخل علاقة مؤذية أو بيئة قاسية. وهنا لا يكفي أن نقول له: <em>"فكر بإيجابية"</em>. إذا كان مصدر الأذى ما زال موجودًا، فنحن بحاجة إلى النظر إليه بصدق.
+        <p className="mb-3">
+          ليس كل ألم نفسي سببه مرض نفسي. أحيانًا يكون الإنسان يعيش داخل علاقة مؤذية أو بيئة قاسية. إذا كان مصدر الأذى ما زال موجودًا، فنحن بحاجة إلى النظر إليه بصدق.
         </p>
 
-        <div className="bg-[#FFF7E9] border border-[#5E4B8B]/40 rounded-xl p-4 space-y-2.5 text-xs mb-4">
+        <div className="bg-[#FFF7E9] border border-[#5E4B8B]/40 rounded-xl p-4 space-y-2.5 text-xs mb-3">
           <div className="font-heading font-bold text-[#0F4C5C] text-sm">
-            اسأل نفسك بصدق:
+            اسأل نفسك بصدق واكتب إجاباتك:
           </div>
           <div>
             <span className="font-bold text-[#0F4C5C] block mb-1">ما الذي يؤذيني تحديدًا؟</span>
@@ -1404,6 +1520,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
               mode={mode}
               value={exercises.page12_hurt || ''}
               onChange={(val) => onInputChange('page12_hurt', val)}
+              placeholder="صف السلوك أو الموقف المؤذي..."
             />
           </div>
           <div>
@@ -1412,6 +1529,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
               mode={mode}
               value={exercises.page12_limit || ''}
               onChange={(val) => onInputChange('page12_limit', val)}
+              placeholder="نعم / لا وكيف..."
             />
           </div>
           <div>
@@ -1420,6 +1538,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
               mode={mode}
               value={exercises.page12_distance || ''}
               onChange={(val) => onInputChange('page12_distance', val)}
+              placeholder="خطوة تقليل الاحتكاك..."
             />
           </div>
           <div>
@@ -1428,6 +1547,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
               mode={mode}
               value={exercises.page12_help || ''}
               onChange={(val) => onInputChange('page12_help', val)}
+              placeholder="من يمكنه مساندتك؟"
             />
           </div>
         </div>
@@ -1439,7 +1559,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     );
   }
 
-  // ---------------- PAGE 13: NO SELF-DIAGNOSIS (STANDALONE PAGE!) ----------------
+  // ---------------- PAGE 13: NO SELF-DIAGNOSIS (STANDALONE INTERACTIVE PAGE) ----------------
   if (pageIndex === 13) {
     const selected = (exercises.page13_reasons || '').split(',').filter(Boolean);
 
@@ -1451,13 +1571,10 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <BrushStrokeUnderline color="#0F4C5C" className="mb-4" />
 
         <p className="mb-3">
-          قد تبحث عن أعراضك فتجد عشرات التشخيصات. تقرأ عن الاكتئاب، ثم تقول: "أنا مكتئب". تقرأ عن اضطراب القلق، فتقول: "إذن هذا ما عندي". ثم تبدأ تجربة نصائح أو أدوية أو مكملات من نفسك.
-        </p>
-        <p className="mb-4">
-          وهنا يجب أن نتوقف. المعلومات الصحية تساعدنا على الفهم، لكنها لا تقوم مقام التقييم المهني. حتى الأعراض المتشابهة يمكن أن تكون لها أسباب مختلفة، وتحديد التشخيص والعلاج يحتاج إلى مختص مؤهل.
+          قد تبحث عن أعراضك فتجد عشرات التشخيصات، ثم تبدأ تجربة نصائح أو أدوية من نفسك. المعلومات الصحية تساعدنا على الفهم، لكنها لا تقوم مقام التقييم المهني.
         </p>
 
-        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 mb-4 text-sm">
+        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5 mb-3 text-sm">
           دور مبادرة <strong>«نسمة حياة»</strong> هو التوعية والكشف المبكر والتوجيه والإحالة، وليس تشخيص الناس بأنفسهم.
         </div>
 
@@ -1500,12 +1617,24 @@ export const BookletPageView: React.FC<PageViewProps> = ({
               تذكير لطيف: القراءة تمنحك لغة تصف بها ألمك، لكن المختص فقط هو من يضع الصورة التشخيصية الكاملة بأمان.
             </p>
           )}
+
+          <div className="pt-2">
+            <label className="block text-xs font-bold text-[#0F4C5C] mb-1">
+              اكتب سؤالاً تود طرحه على مختص بدلاً من البحث العشوائي:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page13_question_for_pro || ''}
+              onChange={(val) => onInputChange('page13_question_for_pro', val)}
+              placeholder="مثال: هل ما أشعر به من إرهاق سببه الضغط أم يحتاج تقييمًا؟"
+            />
+          </div>
         </div>
       </PageShell>
     );
   }
 
-  // ---------------- PAGE 14: DO I NEED A SPECIALIST? (STANDALONE PAGE!) ----------------
+  // ---------------- PAGE 14: DO I NEED A SPECIALIST? ----------------
   if (pageIndex === 14) {
     const selected = (exercises.page14_signs || '').split(',').filter(Boolean);
 
@@ -1517,7 +1646,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <BrushStrokeUnderline color="#2E7D32" className="mb-4" />
 
         <p className="mb-4">
-          ليس من الضروري أن تصل إلى أسوأ مرحلة حتى تطلب المساعدة. فكّر في طلب الاستشارة المتخصصة عندما تلاحظ إحدى هذه العلامات (يمكنك تحديد ما ينطبق عليك الآن):
+          ليس من الضروري أن تصل إلى أسوأ مرحلة حتى تطلب المساعدة. حدّد العلامات التي تنطبق عليك الآن:
         </p>
 
         <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 space-y-2.5 mb-5">
@@ -1582,7 +1711,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     );
   }
 
-  // ---------------- PAGE 15: PSYCHOLOGIST VS PSYCHIATRIST (STANDALONE PAGE!) ----------------
+  // ---------------- PAGE 15: PSYCHOLOGIST VS PSYCHIATRIST (NOW INTERACTIVE!) ----------------
   if (pageIndex === 15) {
     return (
       <PageShell metaIndex={15} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
@@ -1591,39 +1720,59 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </h2>
         <BrushStrokeUnderline color="#0F4C5C" className="mb-4" />
 
-        <p className="mb-4">
-          كثيرًا ما يتردد الشخص في طلب الدعم لأنه لا يعرف لمن يتجه أولاً. معرفة الفرق البسيط بين الدورين تسهل عليك الخطوة الأولى:
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4">
-            <h3 className="font-heading font-bold text-base text-[#0F4C5C] mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-3.5">
+            <h3 className="font-heading font-bold text-sm sm:text-base text-[#0F4C5C] mb-1.5">
               الأخصائي النفسي (Psychologist)
             </h3>
-            <p className="text-xs sm:text-sm text-[#2E2E2E] leading-relaxed">
-              مختص في التقييم النفسي، الجلسات الكلامية، والعلاج النفسي السلوكي والمعرفي بحسب مؤهلاته وترخيصه. لا يصف أدوية طبية.
+            <p className="text-xs sm:text-sm text-[#2E2E2E] prose-box">
+              مختص في التقييم النفسي، الجلسات الكلامية، والعلاج النفسي السلوكي والمعرفي بحسب ترخيصه. لا يصف أدوية.
             </p>
           </div>
 
-          <div className="bg-[#FCF9F2] border border-[#2E7D32]/50 rounded-xl p-4">
-            <h3 className="font-heading font-bold text-base text-[#2E7D32] mb-2">
+          <div className="bg-[#FCF9F2] border border-[#2E7D32]/50 rounded-xl p-3.5">
+            <h3 className="font-heading font-bold text-sm sm:text-base text-[#2E7D32] mb-1.5">
               الطبيب النفسي (Psychiatrist)
             </h3>
-            <p className="text-xs sm:text-sm text-[#2E2E2E] leading-relaxed">
-              طبيب بشري متخصص في الصحة النفسية، يُجري التقييم الطبي الشامل، يستبعد الأسباب العضوية، ويصف الأدوية عند الحاجة.
+            <p className="text-xs sm:text-sm text-[#2E2E2E] prose-box">
+              طبيب بشري متخصص في الصحة النفسية، يُجري التقييم الطبي الشامل ويصف الأدوية عند الحاجة.
             </p>
           </div>
         </div>
 
-        <div className="bg-[#A8D8F0]/20 border border-[#0F4C5C]/25 rounded-xl p-4 prose-box">
-          <strong className="text-[#0F4C5C] block mb-1">القاعدة المطمئنة:</strong>
-          قد يحتاج بعض الأشخاص إلى العلاج النفسي، وبعضهم إلى العلاج الدوائي، وبعضهم إلى الاثنين معًا. ليس المطلوب منك أن تعرف وحدك أيهما تحتاج؛ ابدأ بطلب تقييم من مختص مؤهل، وهو يساعدك في تحديد الخطوة المناسبة.
+        <div className="bg-[#A8D8F0]/20 border border-[#0F4C5C]/25 rounded-xl p-3.5 mb-4 prose-box text-xs sm:text-sm">
+          <strong className="text-[#0F4C5C]">القاعدة المطمئنة:</strong> ليس المطلوب أن تعرف وحدك أيهما تحتاج؛ ابدأ بطلب تقييم من مختص مؤهل، وهو يوجهك للخطوة المناسبة.
+        </div>
+
+        <div className="bg-[#FCF9F2] border border-[#7CC9B6]/60 rounded-xl p-4 space-y-3">
+          <div>
+            <span className="font-heading font-bold text-xs sm:text-sm text-[#0F4C5C] block mb-2">
+              ما الخطوة الأقرب لراحتك الآن؟
+            </span>
+            <PrintableRadioGroup
+              mode={mode}
+              options={['أخصائي نفسي', 'طبيب نفسي', 'تقييم أولي يحدد لي']}
+              value={exercises.page15_choice || ''}
+              onChange={(val) => onInputChange('page15_choice', val)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#0F4C5C] mb-1">
+              نقاط أو تساؤلات أود تذكرها في أول جلسة:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page15_questions || ''}
+              onChange={(val) => onInputChange('page15_questions', val)}
+              placeholder="اكتب أهم ما تريد الحديث عنه..."
+            />
+          </div>
         </div>
       </PageShell>
     );
   }
 
-  // ---------------- PAGE 16: EMERGENCY (STANDALONE PAGE!) ----------------
+  // ---------------- PAGE 16: EMERGENCY (NOW INTERACTIVE PERSONAL SAFETY CONTACTS!) ----------------
   if (pageIndex === 16) {
     return (
       <PageShell metaIndex={16} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
@@ -1635,32 +1784,46 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
         <BrushStrokeUnderline color="#6D1B3B" className="mb-4" />
 
-        <p className="mb-4">
-          هناك مواقف لا ينبغي انتظار موعد عادي فيها، لأن سلامتك أو سلامة من تحب هي الأولوية القصوى في تلك اللحظة.
-        </p>
-
-        <div className="bg-[#6D1B3B]/8 border border-[#6D1B3B]/40 rounded-xl p-5 space-y-3 mb-5">
-          <h3 className="font-heading font-bold text-base text-[#6D1B3B]">
+        <div className="bg-[#6D1B3B]/8 border border-[#6D1B3B]/40 rounded-xl p-4 space-y-2 mb-4">
+          <h3 className="font-heading font-bold text-sm sm:text-base text-[#6D1B3B]">
             علامات تستدعي مساعدة عاجلة فورًا:
           </h3>
-          <ul className="list-disc list-inside space-y-2 text-[#2E2E2E] pr-1">
+          <ul className="list-disc list-inside space-y-1.5 text-[#2E2E2E] pr-1 text-xs sm:text-sm">
             <li>وجود خطر فوري على سلامة الشخص أو من حوله.</li>
-            <li>أفكار أو خطة أو نية لإيذاء النفس أو إيذاء شخص آخر.</li>
-            <li>فقدان القدرة على الحفاظ على السلامة الشخصية أو الوعي.</li>
+            <li>أفكار أو خطة أو نية لإيذاء النفس أو شخص آخر.</li>
+            <li>فقدان القدرة على الحفاظ على السلامة الشخصية.</li>
           </ul>
+          <p className="text-xs font-bold text-[#6D1B3B] pt-1">
+            لا تبقَ وحدك، وتوجّه فورًا لخدمات الطوارئ أو أقرب منشأة صحية.
+          </p>
         </div>
 
-        <div className="bg-[#FFF7E9] border border-[#6D1B3B]/35 rounded-xl p-4 space-y-2">
-          <div className="font-heading font-bold text-[#6D1B3B]">
-            ماذا تفعل فورًا في هذه الحالات؟
+        <div className="bg-[#FFF7E9] border border-[#6D1B3B]/35 rounded-xl p-4 space-y-3 text-xs">
+          <div className="font-heading font-bold text-sm text-[#6D1B3B]">
+            جهز أرقام الطوارئ الخاصة بك مسبقًا لتكون أمامك فورًا:
           </div>
-          <p className="text-xs sm:text-sm leading-relaxed text-[#2E2E2E]">
-            1. لا تبقَ وحدك، ولا تترك الشخص المعرّض للخطر وحده أبدًا.
-            <br />
-            2. تواصل فورًا مع أقرب شخص موثوق، وتوجّه إلى <strong>خدمات الطوارئ أو أقرب مستشفى/منشأة صحية مناسبة</strong>.
-            <br />
-            3. لا تحاول القيام بدور الطبيب أو المعالج في لحظة الأزمة الحادة.
-          </p>
+          <div>
+            <label className="font-bold text-[#0F4C5C] block mb-1">
+              اسم ورقم شخص آمن أتصل به فورًا عند الضرورة:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page16_safe_contact || ''}
+              onChange={(val) => onInputChange('page16_safe_contact', val)}
+              placeholder="الاسم والرقم..."
+            />
+          </div>
+          <div>
+            <label className="font-bold text-[#0F4C5C] block mb-1">
+              أقرب مستشفى طوارئ أو خط مساندة في بلدي:
+            </label>
+            <PrintableTextField
+              mode={mode}
+              value={exercises.page16_nearest_er || ''}
+              onChange={(val) => onInputChange('page16_nearest_er', val)}
+              placeholder="اسم المستشفى أو رقم الطوارئ المحلي..."
+            />
+          </div>
         </div>
       </PageShell>
     );
@@ -1687,7 +1850,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         </div>
         <BrushStrokeUnderline color="#FF8A65" className="mb-4" />
 
-        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 space-y-3 text-xs">
+        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 space-y-2.5 text-xs">
           <div>
             <strong className="text-[#0F4C5C] block mb-1">
               عندما أبدأ في التدهور، ألاحظ أنني:
@@ -1759,7 +1922,7 @@ export const BookletPageView: React.FC<PageViewProps> = ({
     );
   }
 
-  // ---------------- PAGE 18: CLOSING ----------------
+  // ---------------- PAGE 18: CLOSING (NOW INTERACTIVE WITH PERSONAL PROMISE!) ----------------
   return (
     <PageShell metaIndex={18} mode={mode} fontScale={fontScale} lineHeight={lineHeight}>
       <div className="text-center">
@@ -1769,49 +1932,48 @@ export const BookletPageView: React.FC<PageViewProps> = ({
         <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#0F4C5C] mb-1">
           رسالة إليك
         </h2>
-        <div className="flex justify-center mb-5">
+        <div className="flex justify-center mb-4">
           <WaveBreezeDivider color="#FF8A65" />
         </div>
 
-        <p className="mb-2.5">
-          ربما قضيت وقتًا طويلاً وأنت تقول: <strong>"أنا لازم أستحمل"</strong>.
-        </p>
-        <p className="mb-2.5">
-          وربما أخفيت تعبك لأنك تخاف أن يراك الآخرون ضعيفًا.
-        </p>
-        <p className="mb-4">
-          وربما اعتدت أن تسأل عن الجميع، ولم تسأل نفسك منذ وقت طويل: <strong>"وأنا... عامل إيه؟"</strong>
+        <p className="mb-2">
+          ربما قضيت وقتًا طويلاً وأنت تقول: <strong>"أنا لازم أستحمل"</strong>، وأخفيت تعبك لأنك تخاف أن يراك الآخرون ضعيفًا.
         </p>
 
-        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-5 my-4 prose-box text-[#2E2E2E]">
-          توقف قليلاً. اسأل نفسك.
+        <div className="bg-[#FFF7E9] border border-[#7CC9B6] rounded-xl p-4 my-3 prose-box text-[#2E2E2E]">
+          توقف قليلاً. اسأل نفسك: <strong>"وأنا... عامل إيه؟"</strong>
           <br />
-          وإذا اكتشفت أنك تحتاج إلى مساعدة، فلا تجعل الخوف أو الخجل يمنعانك منها.
-          <br />
-          لا تنتظر حتى ينهار كل شيء حتى تبدأ في الاهتمام بنفسك.
-          <br />
-          <br />
-          <strong className="text-[#0F4C5C]">
-            فطلب المساعدة ليس هزيمة.
-            <br />
-            أحيانًا... يكون أول خطوة في طريق العودة إلى الحياة.
+          <strong className="text-[#0F4C5C] block mt-1.5">
+            طلب المساعدة ليس هزيمة... أحيانًا يكون أول خطوة في طريق العودة إلى الحياة.
           </strong>
         </div>
 
-        <div className="mt-5 flex flex-col items-center gap-2">
+        <div className="bg-[#FCF9F2] border border-[#FF8A65]/50 rounded-xl p-4 text-right mb-4">
+          <label className="block text-xs sm:text-sm font-heading font-bold text-[#0F4C5C] mb-1.5">
+            قبل أن تغلق الكتيب: ما العهد اللطيف الذي تقطعه لنفسك اليوم؟
+          </label>
+          <PrintableTextField
+            mode={mode}
+            value={exercises.page18_promise || ''}
+            onChange={(val) => onInputChange('page18_promise', val)}
+            placeholder="مثال: سأعطي نفسي نصف ساعة راحة يوميًا دون تأنيب..."
+          />
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
           <NasmatLogoMark size="md" />
           <div className="text-xs font-sub text-[#FF8A65] font-semibold">
             "كثيرون يعيشون الحياة... وقليلون يستمتعون بها"
           </div>
 
-          {mode === 'interactive' && onDownloadPDF && (
+          {mode === 'interactive' && onOpenAnswers && (
             <button
               type="button"
-              onClick={onDownloadPDF}
-              className="mt-3 inline-flex items-center gap-2 bg-[#0F4C5C] hover:bg-[#093440] text-white px-5 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm cursor-pointer transition"
+              onClick={onOpenAnswers}
+              className="mt-2 inline-flex items-center gap-2 bg-[#0F4C5C] hover:bg-[#093440] text-white px-5 py-2.5 rounded-xl font-heading font-bold text-xs sm:text-sm cursor-pointer transition"
             >
-              <Download className="w-4 h-4" />
-              <span>احفظ نسختك الكاملة بإجاباتك كـ PDF</span>
+              <BookMarked className="w-4 h-4" />
+              <span>عرض ملخص كل إجاباتي</span>
             </button>
           )}
         </div>

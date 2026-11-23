@@ -9,6 +9,7 @@ import {
   Layers,
   Trash2,
   ArrowUp,
+  BookMarked,
 } from 'lucide-react';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -17,6 +18,7 @@ import { ExerciseData, SleepDayEntry, SleepLogMap } from './types/booklet';
 import { NasmatLogoMark } from './components/BrandMotifs';
 import { BreathingModal } from './components/BreathingModal';
 import { BookletPageView, FontScale } from './components/BookletPageView';
+import { MyAnswersModal } from './components/MyAnswersModal';
 
 const STORAGE_EXERCISES_KEY = 'nasmat_hayah_exercises_v2';
 const STORAGE_SLEEP_KEY = 'nasmat_hayah_sleep_v2';
@@ -57,6 +59,7 @@ export default function App() {
     }
   });
   const [breathingOpen, setBreathingOpen] = useState(false);
+  const [answersModalOpen, setAnswersModalOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
@@ -179,6 +182,7 @@ export default function App() {
   };
 
   const handleImportPlan = () => {
+    const decline = exercises.page4_symptoms?.split(',').filter(Boolean).join(' · ') || '';
     const drains = [
       exercises.page5_stress1,
       exercises.page5_stress2,
@@ -189,13 +193,16 @@ export default function App() {
       .join(' · ');
 
     const helps = exercises.page10_restore?.trim() || '';
+    const safePerson = exercises.page16_safe_contact?.trim() || '';
 
     setExercises((prev) => ({
       ...prev,
+      plan_decline: prev.plan_decline?.trim() ? prev.plan_decline : decline,
       plan_drain: prev.plan_drain?.trim() ? prev.plan_drain : drains,
       plan_helps: prev.plan_helps?.trim() ? prev.plan_helps : helps,
+      plan_person: prev.plan_person?.trim() ? prev.plan_person : safePerson,
     }));
-    showTemporaryNotice('تم استيراد ملاحظاتك من التمارين السابقة إلى خطتك.');
+    showTemporaryNotice('تم استيراد إجاباتك واختياراتك السابقة إلى خطتك.');
   };
 
   const handleClearAll = () => {
@@ -366,6 +373,9 @@ export default function App() {
 
   const activeMeta = BOOKLET_PAGES[currentPage];
   const progressPercent = Math.round(((currentPage + 1) / BOOKLET_PAGES.length) * 100);
+  const filledAnswersCount =
+    Object.values(exercises).filter((v) => typeof v === 'string' && v.trim().length > 0).length +
+    (Object.values(sleepLog).some((d) => d.quality || d.phoneBeforeBed || d.stress) ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-[#FFF7E9] text-[#2E2E2E] font-body flex flex-col selection:bg-[#FFB6B9] selection:text-[#0F4C5C]">
@@ -419,19 +429,14 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Zone 3: Primary CTA */}
+          {/* Zone 3: Primary CTA — Interactive Answers Journal */}
           <button
             type="button"
-            onClick={handleDownloadPDF}
-            disabled={isGenerating}
-            className="flex items-center gap-2 bg-[#FF8A65] hover:bg-[#e57753] disabled:opacity-60 text-white px-4 py-2 rounded-xl font-heading font-bold text-xs sm:text-sm transition shadow-sm cursor-pointer whitespace-nowrap shrink-0"
+            onClick={() => setAnswersModalOpen(true)}
+            className="flex items-center gap-2 bg-[#FF8A65] hover:bg-[#e57753] text-white px-4 py-2 rounded-xl font-heading font-bold text-xs sm:text-sm transition shadow-sm cursor-pointer whitespace-nowrap shrink-0 tabular-nums"
           >
-            {isGenerating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            <span>{isGenerating ? pdfProgress || 'جاري التحضير...' : 'تنزيل PDF'}</span>
+            <BookMarked className="w-4 h-4" />
+            <span>دفتر إجاباتي{filledAnswersCount > 0 ? ` (${filledAnswersCount})` : ''}</span>
           </button>
         </div>
       </header>
@@ -543,12 +548,26 @@ export default function App() {
 
             <button
               type="button"
+              onClick={handleDownloadPDF}
+              disabled={isGenerating}
+              className="inline-flex items-center gap-1.5 bg-[#0F4C5C] hover:bg-[#093440] disabled:opacity-60 text-white px-3 py-1.5 rounded-lg text-xs font-heading font-bold cursor-pointer whitespace-nowrap shrink-0"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{isGenerating ? pdfProgress || 'جاري التحضير...' : 'حفظ PDF'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrintPaper}
               disabled={isGenerating}
               className="inline-flex items-center gap-1.5 bg-white hover:bg-[#FFF7E9] border border-[#7CC9B6] text-[#0F4C5C] px-3 py-1.5 rounded-lg text-xs font-heading font-bold cursor-pointer whitespace-nowrap shrink-0"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>طباعة ورقية</span>
+              <span>طباعة</span>
             </button>
 
             {!confirmClear ? (
@@ -633,7 +652,7 @@ export default function App() {
               onNavigate={navigateToPage}
               onOpenBreathing={() => setBreathingOpen(true)}
               onImportPlan={handleImportPlan}
-              onDownloadPDF={handleDownloadPDF}
+              onOpenAnswers={() => setAnswersModalOpen(true)}
             />
 
             {/* Page Turn Controls */}
@@ -694,7 +713,7 @@ export default function App() {
                   onNavigate={navigateToPage}
                   onOpenBreathing={() => setBreathingOpen(true)}
                   onImportPlan={handleImportPlan}
-                  onDownloadPDF={handleDownloadPDF}
+                  onOpenAnswers={() => setAnswersModalOpen(true)}
                 />
               </div>
             ))}
@@ -752,6 +771,16 @@ export default function App() {
 
       {/* Guided 4-7-8 Breathing Modal */}
       <BreathingModal isOpen={breathingOpen} onClose={() => setBreathingOpen(false)} />
+
+      {/* Interactive Answers Journal Modal */}
+      <MyAnswersModal
+        isOpen={answersModalOpen}
+        onClose={() => setAnswersModalOpen(false)}
+        exercises={exercises}
+        sleepLog={sleepLog}
+        onJumpToPage={navigateToPage}
+        onDownloadPDF={handleDownloadPDF}
+      />
     </div>
   );
 }
